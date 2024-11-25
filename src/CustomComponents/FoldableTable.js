@@ -24,12 +24,12 @@ function createData(name, calories, fat, carbs, protein, price) {
     price,
     history: [
       {
-        date: "2020-01-05",
+        date: "20-11-2024",
         customerId: "11091700",
         amount: 3,
       },
       {
-        date: "2020-01-02",
+        date: "21-11-2024",
         customerId: "Anonymous",
         amount: 1,
       },
