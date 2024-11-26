@@ -97,9 +97,9 @@ function ResponsiveDrawer(props) {
         ))}
       </List>
 
-      <div style={{ textAlign: "center", marginTop: "40px" }}>
+      {/* <div style={{ textAlign: "center", marginTop: "40px" }}>
         <Button variant="outlined">Log out</Button>
-      </div>
+      </div> */}
     </div>
   );
 

@@ -14,27 +14,8 @@ import Paper from "@mui/material/Paper";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
-function createData(name, calories, fat, carbs, protein, price) {
-  return {
-    name,
-    calories,
-    fat,
-    carbs,
-    protein,
-    price,
-    history: [
-      {
-        date: "20-11-2024",
-        customerId: "11091700",
-        amount: 3,
-      },
-      {
-        date: "21-11-2024",
-        customerId: "Anonymous",
-        amount: 1,
-      },
-    ],
-  };
+function createTask(name, dueDate, priority, status, history) {
+  return { name, dueDate, priority, status, history };
 }
 
 function Row(props) {
@@ -56,38 +37,31 @@ function Row(props) {
         <TableCell component="th" scope="row">
           {row.name}
         </TableCell>
-        <TableCell align="right">{row.calories}</TableCell>
-        <TableCell align="right">{row.fat}</TableCell>
-        <TableCell align="right">{row.carbs}</TableCell>
-        <TableCell align="right">{row.protein}</TableCell>
+        <TableCell>{row.dueDate}</TableCell>
+        <TableCell>{row.priority}</TableCell>
+        <TableCell>{row.status}</TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Typography variant="h6" gutterBottom component="div">
-                History
+                Task History
               </Typography>
-              <Table size="small" aria-label="purchases">
+              <Table size="small" aria-label="history">
                 <TableHead>
                   <TableRow>
                     <TableCell>Date</TableCell>
-                    <TableCell>Customer</TableCell>
-                    <TableCell align="right">Amount</TableCell>
-                    <TableCell align="right">Total price ($)</TableCell>
+                    <TableCell>Action</TableCell>
+                    <TableCell>Notes</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {row.history.map((historyRow) => (
-                    <TableRow key={historyRow.date}>
-                      <TableCell component="th" scope="row">
-                        {historyRow.date}
-                      </TableCell>
-                      <TableCell>{historyRow.customerId}</TableCell>
-                      <TableCell align="right">{historyRow.amount}</TableCell>
-                      <TableCell align="right">
-                        {Math.round(historyRow.amount * row.price * 100) / 100}
-                      </TableCell>
+                  {row.history.map((historyRow, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{historyRow.date}</TableCell>
+                      <TableCell>{historyRow.action}</TableCell>
+                      <TableCell>{historyRow.notes}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -102,28 +76,33 @@ function Row(props) {
 
 Row.propTypes = {
   row: PropTypes.shape({
-    calories: PropTypes.number.isRequired,
-    carbs: PropTypes.number.isRequired,
-    fat: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    dueDate: PropTypes.string.isRequired,
+    priority: PropTypes.string.isRequired,
+    status: PropTypes.string.isRequired,
     history: PropTypes.arrayOf(
       PropTypes.shape({
-        amount: PropTypes.number.isRequired,
-        customerId: PropTypes.string.isRequired,
         date: PropTypes.string.isRequired,
+        action: PropTypes.string.isRequired,
+        notes: PropTypes.string,
       })
     ).isRequired,
-    name: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    protein: PropTypes.number.isRequired,
   }).isRequired,
 };
 
 const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0, 3.99),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3, 4.99),
-  createData("Eclair", 262, 16.0, 24, 6.0, 3.79),
-  createData("Cupcake", 305, 3.7, 67, 4.3, 2.5),
-  createData("Gingerbread", 356, 16.0, 49, 3.9, 1.5),
+  createTask("Design Logo", "2024-11-25", "High", "Completed", [
+    { date: "2024-11-20", action: "Created", notes: "Initial draft" },
+    { date: "2024-11-22", action: "Updated", notes: "Client feedback applied" },
+  ]),
+  createTask("Write Blog Post", "2024-11-26", "Medium", "Completed", [
+    { date: "2024-11-21", action: "Created", notes: "Topic selected" },
+    { date: "2024-11-24", action: "Completed", notes: "Final edits made" },
+  ]),
+  createTask("Code Review", "2024-11-23", "Low", "Completed", [
+    { date: "2024-11-22", action: "Scheduled", notes: "" },
+    { date: "2024-11-23", action: "Completed", notes: "No issues found" },
+  ]),
 ];
 
 export default function ArchivedTask() {
@@ -135,11 +114,10 @@ export default function ArchivedTask() {
             <TableHead>
               <TableRow>
                 <TableCell />
-                <TableCell>Dessert (100g serving)</TableCell>
-                <TableCell align="right">Calories</TableCell>
-                <TableCell align="right">Fat&nbsp;(g)</TableCell>
-                <TableCell align="right">Carbs&nbsp;(g)</TableCell>
-                <TableCell align="right">Protein&nbsp;(g)</TableCell>
+                <TableCell>Task Name</TableCell>
+                <TableCell>Due Date</TableCell>
+                <TableCell>Priority</TableCell>
+                <TableCell>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
