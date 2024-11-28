@@ -13,7 +13,7 @@ const LandingPage = () => {
           <Typography variant="h6">
             Simplify, Track, and Manage Your Student Tasks Effortlessly!
           </Typography>
-          <Button
+          {/* <Button
             variant="contained"
             style={{
               marginTop: "20px",
@@ -22,7 +22,7 @@ const LandingPage = () => {
             }}
           >
             Get Started
-          </Button>
+          </Button> */}
         </Grid>
 
         {/* Features Section */}
@@ -76,7 +76,7 @@ const LandingPage = () => {
           <Typography variant="h5">
             Ready to organize your tasks like a pro?
           </Typography>
-          <Button
+          {/* <Button
             variant="contained"
             style={{
               marginTop: "20px",
@@ -85,7 +85,7 @@ const LandingPage = () => {
             }}
           >
             Explore now
-          </Button>
+          </Button> */}
         </Grid>
       </Grid>
     </div>
