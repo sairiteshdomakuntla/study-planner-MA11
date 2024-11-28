@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Grid, TextField, Button, MenuItem } from "@mui/material";
+import { 
+  Grid, 
+  TextField, 
+  Button, 
+  MenuItem, 
+  Snackbar, 
+  Alert 
+} from "@mui/material";
 import { v4 as uuidv4 } from 'uuid';
 
 const CreateNewTask = () => {
   const [subjectsList, setSubjectsList] = useState([]);
   const [subTasks, setSubTasks] = useState([]);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
   const [task, setTask] = useState({
     uid: uuidv4(),
     completed: false,
@@ -17,28 +29,63 @@ const CreateNewTask = () => {
     todate: "",
   });
 
-  // Load subjects from localStorage on component mount
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   useEffect(() => {
     const storedSubjects = JSON.parse(localStorage.getItem('subjects') || '[]');
     setSubjectsList(storedSubjects);
   }, []);
 
   const addTaskToDb = () => {
-    // Get existing tasks from localStorage
+    // Validation checks
+    if (!task.subject) {
+      setSnackbar({ 
+        open: true, 
+        message: "Please select a subject", 
+        severity: 'error' 
+      });
+      return;
+    }
+    if (!task.task) {
+      setSnackbar({ 
+        open: true, 
+        message: "Task name is required", 
+        severity: 'error' 
+      });
+      return;
+    }
+    if (subTasks.some(subTask => !subTask.name)) {
+      setSnackbar({ 
+        open: true, 
+        message: "All subtasks must have a name", 
+        severity: 'error' 
+      });
+      return;
+    }
+
     const existingTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     
-    // Prepare new task object
     const newTaskEntry = {
       ...task,
       uid: uuidv4(),
       tasks: subTasks
     };
 
-    // Add new task to existing tasks
     const updatedTasks = [...existingTasks, newTaskEntry];
 
-    // Save to localStorage
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+
+    // Success snackbar
+    setSnackbar({ 
+      open: true, 
+      message: "Task saved successfully!", 
+      severity: 'success' 
+    });
 
     // Reset form
     setEmptyTaskAndSubTask();
@@ -71,6 +118,15 @@ const CreateNewTask = () => {
   };
 
   const addSubTask = () => {
+    if (subTasks.length >= 5) {
+      setSnackbar({ 
+        open: true, 
+        message: "Maximum of 5 subtasks allowed", 
+        severity: 'warning' 
+      });
+      return;
+    }
+
     const newSubTask = {
       id: uuidv4(),
       name: '',
@@ -88,10 +144,30 @@ const CreateNewTask = () => {
 
   const deleteSubTask = (id) => {
     setSubTasks(subTasks.filter(subTask => subTask.id !== id));
+    setSnackbar({ 
+      open: true, 
+      message: "Subtask removed", 
+      severity: 'info' 
+    });
   };
 
   return (
     <div>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <Grid container spacing={2} justifyContent="center" alignItems="center">
         <Grid item xs={12} md={10}>
           <TextField
@@ -103,6 +179,8 @@ const CreateNewTask = () => {
             onChange={handleTaskChange}
             variant="outlined"
             margin="normal"
+            error={!task.subject}
+            helperText={!task.subject ? "Subject is required" : ""}
           >
             {subjectsList.map((subject) => (
               <MenuItem key={subject.id} value={subject.subject}>
@@ -119,6 +197,8 @@ const CreateNewTask = () => {
             onChange={handleTaskChange}
             variant="outlined"
             margin="normal"
+            error={!task.task}
+            helperText={!task.task ? "Task name is required" : ""}
           />
 
           <TextField
@@ -165,8 +245,9 @@ const CreateNewTask = () => {
             color="primary" 
             onClick={addSubTask}
             sx={{ mt: 2 }}
+            disabled={subTasks.length >= 5}
           >
-            Add Subtask
+            Add Subtask {subTasks.length}/5
           </Button>
 
           {subTasks.map((subTask, index) => (
@@ -178,6 +259,8 @@ const CreateNewTask = () => {
                   value={subTask.name}
                   onChange={(e) => updateSubTask(index, { name: e.target.value })}
                   variant="outlined"
+                  error={!subTask.name}
+                  helperText={!subTask.name ? "Subtask name is required" : ""}
                 />
               </Grid>
               <Grid item xs={4}>
@@ -217,22 +300,28 @@ const CreateNewTask = () => {
             </Grid>
           ))}
 
-          <Button 
-            variant="contained" 
-            color="success" 
-            onClick={addTaskToDb}
-            sx={{ mt: 2, mr: 2 }}
-          >
-            Save Task
-          </Button>
-          <Button 
-            variant="outlined" 
-            color="secondary" 
-            onClick={setEmptyTaskAndSubTask}
-            sx={{ mt: 2 }}
-          >
-            Clear
-          </Button>
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            <Grid item xs={6}>
+              <Button 
+                fullWidth
+                variant="contained" 
+                color="success" 
+                onClick={addTaskToDb}
+              >
+                Save Task
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button 
+                fullWidth
+                variant="outlined" 
+                color="secondary" 
+                onClick={setEmptyTaskAndSubTask}
+              >
+                Clear
+              </Button>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </div>

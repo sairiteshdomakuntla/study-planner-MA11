@@ -1,201 +1,282 @@
-import Box from "@mui/material/Box";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import { useState, useEffect, useRef } from "react";
-import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid";
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Grid, 
+  Card, 
+  CardContent, 
+  CardActionArea, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  Button, 
+  TextField, 
+  Autocomplete,
+  IconButton,
+  Chip
+} from '@mui/material';
+import { 
+  Add as AddIcon, 
+  Delete as DeleteIcon, 
+  Edit as EditIcon, 
+  Search as SearchIcon 
+} from '@mui/icons-material';
 
-//import for dialog
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-
-import Table from "../CustomComponents/EditableTable";
-import ManageTaskCard from "../Components/ManageTaskCard";
-import CreateNewTask from "./CreateTask";
-import ManageTaskForm from "../Components/CreateTaskForm";
-
-const ManageTask = () => {
-  const [age, setAge] = useState("");
-  const [open, setOpen] = useState(false);
+const EnhancedManageTask = () => {
+  const [tasks, setTasks] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [subjectsList, setSubjectsList] = useState([]);
-  const [allData, setAllData] = useState([]);
-  const [actualAllTask, setActualAllTask] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSubject, setFilterSubject] = useState(null);
 
-  // Initialize localStorage on first load
+  // Load initial data from localStorage
   useEffect(() => {
-    const storedSubjects = JSON.parse(localStorage.getItem('subjects')) || [];
     const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    
-    setSubjectsList(storedSubjects);
-    setAllData(storedTasks);
-    setActualAllTask(storedTasks);
+    const storedSubjects = JSON.parse(localStorage.getItem('subjects')) || [];
+    setTasks(storedTasks);
+    setSubjects(storedSubjects);
   }, []);
 
-  const saveSubjectsToLocalStorage = (subjects) => {
-    localStorage.setItem('subjects', JSON.stringify(subjects));
-    setSubjectsList(subjects);
+  // Filter tasks based on search and subject
+  const filteredTasks = tasks.filter(task => 
+    (searchQuery === '' || task.task.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (!filterSubject || task.subject === filterSubject.subject)
+  );
+
+  // Update localStorage and state
+  const updateStorage = (newTasks) => {
+    localStorage.setItem('tasks', JSON.stringify(newTasks));
+    setTasks(newTasks);
   };
 
-  const saveTasksToLocalStorage = (tasks) => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    setAllData(tasks);
-    setActualAllTask(tasks);
+  // Open task edit dialog
+  const handleEditTask = (task) => {
+    setSelectedTask(task);
+    setIsDialogOpen(true);
   };
 
-  const handleChange = (event) => {
-    const data = event.target.value;
-    const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-
-    if (data) {
-      if (data.subject) {
-        const { subject } = data;
-        const _filteredTasks = storedTasks.filter((item) => item.subject === subject);
-        saveTasksToLocalStorage(_filteredTasks);
-      } else {
-        const _filteredTasks = storedTasks.filter((item) => 
-          item.task.toLowerCase().includes(data.toLowerCase())
-        );
-        saveTasksToLocalStorage(_filteredTasks);
-      }
-    } else {
-      saveTasksToLocalStorage(storedTasks);
-    }
+  // Delete task
+  const handleDeleteTask = (taskToDelete) => {
+    const updatedTasks = tasks.filter(task => task.taskid !== taskToDelete.taskid);
+    updateStorage(updatedTasks);
   };
 
-  const handleClickOpen = (data) => {
-    setSelectedTask(data);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setSelectedTask(null);
-    setOpen(false);
-  };
-
-  const UpdateTaskToDb = async () => {
-    const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    const updatedTasks = storedTasks.map(task => 
+  // Update task
+  const handleUpdateTask = () => {
+    const updatedTasks = tasks.map(task => 
       task.taskid === selectedTask.taskid ? selectedTask : task
     );
-    
-    saveTasksToLocalStorage(updatedTasks);
-    setOpen(false);
-    setSelectedTask(null);
+    updateStorage(updatedTasks);
+    setIsDialogOpen(false);
   };
-
-  const deleteTask = async () => {
-    const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    const updatedTasks = storedTasks.filter(task => 
-      task.taskid !== selectedTask.taskid
-    );
-    
-    saveTasksToLocalStorage(updatedTasks);
-    setOpen(false);
-    setSelectedTask(null);
-  };
-
-  const descriptionElementRef = useRef(null);
-  useEffect(() => {
-    if (open) {
-      const { current: descriptionElement } = descriptionElementRef;
-      if (descriptionElement !== null) {
-        descriptionElement.focus();
-      }
-    }
-  }, [open]);
 
   return (
-    <div>
-      <Dialog
-        maxWidth={"md"}
-        open={open}
-        onClose={handleClose}
-        scroll={"body"}
-        zIndex={100}
-        aria-labelledby="scroll-dialog-title"
-        aria-describedby="scroll-dialog-description"
+    <Box sx={{ 
+      maxWidth: 1200, 
+      margin: 'auto', 
+      padding: 3, 
+      backgroundColor: '#f5f5f5' 
+    }}>
+      <Typography 
+        variant="h4" 
+        gutterBottom 
+        sx={{ 
+          textAlign: 'center', 
+          marginBottom: 4,
+          fontWeight: 'bold',
+          color: '#333'
+        }}
       >
-        <DialogTitle id="scroll-dialog-title">
-          {selectedTask ? selectedTask.task : "No Name Assigned"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            id="scroll-dialog-description"
-            ref={descriptionElementRef}
-            tabIndex={-1}
-          >
-            {selectedTask ? (
-              <ManageTaskForm
-                subjectsList={subjectsList}
-                task={selectedTask}
-                setTask={setSelectedTask}
-                addTaskToDb={UpdateTaskToDb}
-                DeleteTaskBtn={deleteTask}
-                manage={true}
+        Task Management
+      </Typography>
+
+      <Grid container spacing={2} sx={{ marginBottom: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Autocomplete
+            options={subjects}
+            getOptionLabel={(option) => option.subject}
+            value={filterSubject}
+            onChange={(_, newValue) => setFilterSubject(newValue)}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Filter by Subject" 
+                variant="outlined" 
+                fullWidth 
               />
-            ) : (
-              "Task Loading"
             )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Grid container spacing={2} justifyContent="center" mb={8}>
-        <Grid item xs={10} md={3} sm={5}>
-          <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Subject</InputLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
-              value={age}
-              label="Subject"
-              onChange={handleChange}
-            >
-              <MenuItem value={null}>
-                <em>None</em>
-              </MenuItem>
-              {subjectsList.map((item) => (
-                <MenuItem key={item.id} value={item}>
-                  {item.subject}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          />
         </Grid>
-
-        <Grid item xs={12} md={3} sm={5}>
+        <Grid item xs={12} md={6}>
           <TextField
-            id="outlined-basic"
-            label="Search Task"
+            fullWidth
             variant="outlined"
-            onChange={handleChange}
+            label="Search Tasks"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ marginRight: 1, color: 'gray' }} />
+            }}
           />
         </Grid>
       </Grid>
 
-      {!selectedTask && (
-        <Grid container spacing={1} justifyContent="space-around" mt={2}>
-          {allData.map((selectedRow) => (
-            <Grid item xs={12} md={4} sm={6} key={selectedRow.taskid}>
-              <div onClick={() => handleClickOpen(selectedRow)}>
-                <ManageTaskCard taskData={selectedRow} />
-              </div>
-            </Grid>
-          ))}
+      <Grid container spacing={3}>
+        {filteredTasks.map((task) => (
+          <Grid item xs={12} sm={6} md={4} key={task.taskid}>
+            <Card 
+              elevation={3} 
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                transition: 'transform 0.2s',
+                '&:hover': { 
+                  transform: 'scale(1.03)' 
+                }
+              }}
+            >
+              <CardActionArea onClick={() => handleEditTask(task)}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      {task.task}
+                    </Typography>
+                    <Chip 
+                      label={task.subject} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ marginTop: 1 }}>
+                    {task.description || 'No description'}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                padding: 1 
+              }}>
+                <IconButton 
+                  color="primary" 
+                  onClick={() => handleEditTask(task)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton 
+                  color="error" 
+                  onClick={() => handleDeleteTask(task)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Card>
+          </Grid>
+        ))}
+
+        <Grid item xs={12} sm={6} md={4}>
+          <Card 
+            variant="outlined" 
+            sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(0,0,0,0.05)'
+              }
+            }}
+            onClick={() => {
+              setSelectedTask(null);
+              setIsDialogOpen(true);
+            }}
+          >
+            <CardContent sx={{ textAlign: 'center' }}>
+              <AddIcon sx={{ fontSize: 50, color: 'primary.main' }} />
+              <Typography variant="h6" color="primary">
+                Add New Task
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
-      )}
-    </div>
+      </Grid>
+
+      {/* Edit/Create Task Dialog */}
+      <Dialog 
+        open={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedTask ? 'Edit Task' : 'Create New Task'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ marginTop: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Task Name"
+                value={selectedTask?.task || ''}
+                onChange={(e) => setSelectedTask(prev => ({
+                  ...prev, 
+                  task: e.target.value
+                }))}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Autocomplete
+                options={subjects}
+                getOptionLabel={(option) => option.subject}
+                value={selectedTask?.subject || null}
+                onChange={(_, newValue) => setSelectedTask(prev => ({
+                  ...prev, 
+                  subject: newValue?.subject
+                }))}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Subject" 
+                    variant="outlined" 
+                    fullWidth 
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={4}
+                value={selectedTask?.description || ''}
+                onChange={(e) => setSelectedTask(prev => ({
+                  ...prev, 
+                  description: e.target.value
+                }))}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                variant="contained" 
+                color="primary"
+                onClick={handleUpdateTask}
+              >
+                {selectedTask ? 'Update Task' : 'Create Task'}
+              </Button>
+            </Grid>
+          </Grid>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 };
 
-export default ManageTask;
+export default EnhancedManageTask;

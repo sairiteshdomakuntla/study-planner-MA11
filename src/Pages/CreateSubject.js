@@ -1,8 +1,13 @@
-import { TextField } from "@mui/material";
-import { Button } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { 
+  TextField, 
+  Button, 
+  Grid, 
+  Snackbar, 
+  Alert,
+  Box
+} from "@mui/material";
 import SubjectTable from "../Components/SubjectTable";
-import { Grid } from "@mui/material";
-import { useState, useEffect } from "react";
 
 const CreateSubject = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +17,21 @@ const CreateSubject = () => {
   });
 
   const [tabData, setTabData] = useState([]);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  useEffect(() => {
+    const storedSubjects = JSON.parse(localStorage.getItem('subjects') || '[]');
+    setTabData(storedSubjects);
+  }, []);
 
   const handleClear = () => {
     setFormData({
@@ -21,16 +41,20 @@ const CreateSubject = () => {
     });
   };
 
-  useEffect(() => {
-    const storedSubjects = JSON.parse(localStorage.getItem('subjects') || '[]');
-    setTabData(storedSubjects);
-  }, []);
-
   const handleFormEdit = (val) => {
     setFormData(val);
   };
 
-  const handleSubmimt = () => {
+  const handleSubmit = () => {
+    if (!formData.subject.trim()) {
+      setSnackbar({ 
+        open: true, 
+        message: "Subject name cannot be empty", 
+        severity: 'error' 
+      });
+      return;
+    }
+
     const existingSubjects = JSON.parse(localStorage.getItem('subjects') || '[]');
 
     if (formData.id) {
@@ -43,7 +67,27 @@ const CreateSubject = () => {
 
       localStorage.setItem('subjects', JSON.stringify(updatedSubjects));
       setTabData(updatedSubjects);
+      
+      setSnackbar({ 
+        open: true, 
+        message: "Subject updated successfully", 
+        severity: 'success' 
+      });
     } else {
+      // Check for duplicate subject
+      const isDuplicate = existingSubjects.some(
+        subject => subject.subject.toLowerCase() === formData.subject.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        setSnackbar({ 
+          open: true, 
+          message: "Subject already exists", 
+          severity: 'warning' 
+        });
+        return;
+      }
+
       // Add new subject
       const newId = Math.floor(Math.random() * 100 + 1);
       const newSubject = { 
@@ -55,17 +99,21 @@ const CreateSubject = () => {
       const updatedSubjects = [...existingSubjects, newSubject];
       localStorage.setItem('subjects', JSON.stringify(updatedSubjects));
       setTabData(updatedSubjects);
+      
+      setSnackbar({ 
+        open: true, 
+        message: "Subject added successfully", 
+        severity: 'success' 
+      });
     }
 
     handleClear();
   };
 
   const handleTextChange = (event) => {
-    const value = event.target.value;
-
     setFormData(prevData => ({
       ...prevData,
-      subject: value,
+      subject: event.target.value,
     }));
   };
 
@@ -75,73 +123,91 @@ const CreateSubject = () => {
 
     localStorage.setItem('subjects', JSON.stringify(remainingSubjects));
     setTabData(remainingSubjects);
+    
+    setSnackbar({ 
+      open: true, 
+      message: "Subject deleted successfully", 
+      severity: 'info' 
+    });
+    
     handleClear();
   };
 
   return (
-    <div>
-      <Grid
-        container
-        spacing={5}
-        direction="row"
-        justifyContent="center"
-        alignItems="center"
-        style={{ marginBottom: "5rem" }}
+    <Box sx={{ p: 2 }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Grid item md={12} sm={12}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Grid 
+        container 
+        spacing={2} 
+        alignItems="center"
+      >
+        <Grid item xs={12} md={8}>
           <TextField
-            id="subject"
+            fullWidth
             label="Subject"
             variant="outlined"
-            onChange={handleTextChange}
             value={formData.subject}
+            onChange={handleTextChange}
+            error={!formData.subject.trim()}
+            helperText={!formData.subject.trim() ? "Subject name is required" : ""}
           />
         </Grid>
-
-        <Grid item md={2} sm={12}>
-          <Button variant="contained" onClick={handleSubmimt}>
+        <Grid item xs={12} md={4}>
+          <Button 
+            fullWidth 
+            variant="contained" 
+            onClick={handleSubmit}
+            disabled={!formData.subject.trim()}
+          >
             {formData.id ? "Update" : "Add"}
           </Button>
         </Grid>
 
-        <Grid
-          item
-          md={2}
-          sm={12}
-          sx={{ display: formData.id ? "inline" : "none" }}
-        >
-          <Button variant="contained" onClick={handleDelete} disabled={false}>
-            Delete
-          </Button>
-        </Grid>
-
-        <Grid
-          item
-          md={2}
-          sm={12}
-          sx={{ display: formData.id ? "inline" : "none" }}
-        >
-          <Button variant="contained" onClick={handleClear} disabled={false}>
-            Clear
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Grid
-        container
-        spacing={5}
-        direction="row"
-        justifyContent="center"
-        alignItems="center"
-        style={{ marginBottom: "5rem" }}
-      >
-        {tabData.length > 0 && (
-          <Grid item md={10} xs={12}>
-            <SubjectTable handleEdit={handleFormEdit} data={tabData} />
-          </Grid>
+        {formData.id && (
+          <>
+            <Grid item xs={12} md={4}>
+              <Button 
+                fullWidth 
+                variant="contained" 
+                color="error"
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                onClick={handleClear}
+              >
+                Clear
+              </Button>
+            </Grid>
+          </>
         )}
       </Grid>
-    </div>
+
+      {tabData.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <SubjectTable handleEdit={handleFormEdit} data={tabData} />
+        </Box>
+      )}
+    </Box>
   );
 };
 
